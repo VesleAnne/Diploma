@@ -1,0 +1,5 @@
+-U torch 
+tqdm 
+sentence-transformers 
+accelerate 
+bitsandbytes 
