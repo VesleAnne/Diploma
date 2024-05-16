@@ -1,0 +1,20 @@
+version: '3'
+services:
+    message-broker:
+        ports:
+          - "5672:5672" # for sender and consumer connections
+          - "15672:15672" # for serve RabbitMQ GUI
+    analyzer:
+        build:
+          dockerfile: Dockerfile-python-dev
+        volumes:
+            - .:/src
+
+    redis:
+        ports:
+            - "6379:6379"
+
+    postgres:
+      ports:
+        - "5432:5432"
+      restart: always

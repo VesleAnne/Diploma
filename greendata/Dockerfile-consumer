@@ -1,0 +1,32 @@
+FROM golang:1.19-alpine AS builder
+
+# Move to working directory (/build/api).
+WORKDIR /go/src/APItest
+
+# Copy and download dependency using go mod.
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy the code into the container.
+COPY /api/consumer ./api/consumer
+COPY /api/broker ./api/broker
+COPY /api/models ./api/models
+
+# Set necessary environment variables needed
+# for our image and build the consumer.
+ENV CGO_ENABLED=0 GOOS=linux GOARCH=amd64
+RUN go build -ldflags="-s -w" -o ./consumer ./api/consumer
+
+FROM scratch
+
+## Copy binary and config files from /build/api
+## to root folder of scratch container.
+#COPY --from=builder ["/build/api/consumer", "/"]
+#
+## Command to run when starting the container.
+#ENTRYPOINT ["/api/consumer"]
+
+COPY --from=builder ["/go/src/APItest/consumer", "/api/consumer"]
+
+# Command to run when starting the container.
+ENTRYPOINT ["/api/consumer"]
