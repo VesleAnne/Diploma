@@ -247,7 +247,7 @@ def get_embeddings_from_dataset(dataset, tokenizer, model, max_length):
         model - НС чат бота"""
     embeddings = []
     log_file('Создание эмбедингов ')
-    for q in dataset['Схема ответа']:
+    for q in dataset['Вопрос']:
         # Tokenize input sequence
         encoded_q = tokenizer(q, return_tensors='pt', truncation=True, max_length=max_length)
         encoded_q = {key: value for key, value in encoded_q.items()}
