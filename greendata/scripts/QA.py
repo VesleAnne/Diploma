@@ -26,18 +26,22 @@ def find_similar_answers(question, dataset, tokenizer, model, embeddings, top_n=
 
     # Getting indexes of the most similar questions
     top_indices = sorted(range(len(similarities)), key=lambda i: similarities[i], reverse=True)[:top_n]
+    for idx in top_indices:
+        answ = dataset['Схема ответа'][idx]
+        web = dataset['Ссылка на wiki'][idx]
+        score_array = (dataset['Схема ответа'][idx], similarities[idx])
 
     # Returning the most similar answers and their corresponding proximity probabilities
-    similar_answers = [(dataset['Схема ответа'][idx], similarities[idx]) for idx in top_indices]
-    for score in similar_answers[0][1][0].astype(float):
-        score_convert = float(score)
+    for score in score_array:
+        score_convert = float(score[0][0])
+
 
     output_bot_answ = {
-                            'Error': False,
+                            'error': False,
                             "Question": question,
-                            "Answer": similar_answers[0][0],
+                            "Answer": answ + "\n " +web,
                             "Score": score_convert,
-                            "OperatorFlag": False
+                            "OperatorFlag": 0
                      }
     return output_bot_answ
 
