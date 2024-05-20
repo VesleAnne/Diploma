@@ -1,6 +1,6 @@
 # Чат-бот для поддержки клиентов Greendata
 
-1. Скачать модель и токенизатор с гугл драйва (тут вставить ссылку)
+1. Скачать модель и токенизатор с гугл драйва ([Скачать)](https://drive.google.com/drive/folders/19TT3zJde24Wy4lY8GyWUsmpZ0Wie_3Dy?usp=drive_link)
 2. Поместить в папку models
 2. docker-compose up
 
