@@ -1,0 +1,108 @@
+version: '3'
+services:
+    message-broker:
+        image: rabbitmq:3-management-alpine
+        container_name: message-broker
+        restart: always
+        networks:
+          - ner-network
+          
+    analyzer:
+        build:
+          context: .
+          dockerfile: Dockerfile-python-gpu
+        environment:
+          CHUNK_SIZE: "${CHUNK_SIZE}"
+          FUZZY_SEARCH: "${FUZZY_SEARCH}"
+          QUEUE_NAME_IN: "${QUEUE_NAME_IN}"
+          AMQP_SERVER_URL: "${AMQP_SERVER_URL}"
+          QUEUE_NAME_OUT: "${QUEUE_NAME_OUT}"
+          INPUT_NN_PATH: "${INPUT_NN_PATH}"
+          INPUT_DETECTED: "${INPUT_DETECTED}"
+          INPUT_TOKENIZER: "${INPUT_TOKENIZER}"
+          USE_GPU: "${USE_GPU}"
+          USE_NN_ONLY: "${USE_NN_ONLY}"
+          REDIS_HOST: "${REDIS_HOST}"
+          REDIS_PORT: "${REDIS_PORT}"
+          SAVE_FILE: "${SAVE_FILE}"
+          OUT_FILE_PATH: "${OUT_FILE_PATH}"
+          ADDR_MODEL: "${ADDR_MODEL}"
+          USE_ADDR_DETECT: "${USE_ADDR_DETECT}"
+          ADDR_RATIO: "${ADDR_RATIO}"
+          STR_MAX_TOKENS: "${STR_MAX_TOKENS}"
+        container_name: python-ner
+        restart: always
+        depends_on:
+            - redis
+        networks:
+            - ner-network
+        deploy:
+            resources:
+                reservations:
+                    devices:
+                        - driver: nvidia
+                          count: 1
+                          capabilities: [gpu]
+
+
+    redis:
+        image: redis:alpine
+        container_name: redis-ner
+        restart: always
+        networks:
+            - ner-network
+
+    postgres:
+      image: postgres
+      container_name: postgres
+      restart: always
+      environment:
+        POSTGRES_DB: "${DB_NAME}"
+        POSTGRES_USER: "${DB_USER}"
+        POSTGRES_PASSWORD: "${DB_PASSWORD}"
+        POSTGRES_PORT: "${DB_PORT}"
+        POSTGRES_SSL: "${DB_SSL}"
+      networks:
+        - ner-network
+
+    sender:
+        container_name: sender
+        ports:
+          - "${API_PORT}:3000"
+        build:
+          context: .
+          dockerfile: Dockerfile-sender
+        environment:
+          AMQP_SERVER_URL: "${AMQP_SERVER_URL}"
+          QUEUE_NAME_IN: "${QUEUE_NAME_IN}"
+          QUEUE_NAME_OUT: "${QUEUE_NAME_OUT}"
+          POSTGRES_URL: "postgresql://${DB_USER}:${DB_PASSWORD}@postgres:${DB_PORT}?sslmode=${DB_SSL}"
+          CHUNK_SIZE: "${CHUNK_SIZE}"
+        restart: always
+        networks:
+          - ner-network
+        depends_on:
+          - message-broker
+          - postgres
+
+    consumer:
+        container_name: consumer
+        build:
+          context: .
+          dockerfile: Dockerfile-consumer
+        environment:
+          AMQP_SERVER_URL: "${AMQP_SERVER_URL}"
+          QUEUE_NAME_IN: "${QUEUE_NAME_IN}"
+          QUEUE_NAME_OUT: "${QUEUE_NAME_OUT}"
+          POSTGRES_URL: "postgresql://${DB_USER}:${DB_PASSWORD}@postgres:${DB_PORT}?sslmode=${DB_SSL}"
+        restart: always
+        networks:
+          - ner-network
+        depends_on:
+          - sender
+          - message-broker
+          - postgres
+
+networks:
+  ner-network:
+    driver: bridge

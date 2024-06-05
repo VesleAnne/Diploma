@@ -9,7 +9,7 @@ import pandas as pd
 import pickle
 
 import scripts.QA
-from scripts.dict_search import redis_connection, import_from_redis
+from scripts.redis_workflow import redis_connection, import_from_redis
 from scripts.send_message import send_result
 
 
@@ -165,12 +165,11 @@ def parse_answer(work_dump, dump_id, config):
     message = []
     for strings in work_dump:
 
-
-        parse_str = {"id": dump_id,
+        parse_str = {"id": int(dump_id),
                      "error": int(strings['Error']),
-                     "Question": strings['Question'],
-                     "Answer": strings['Answer'],
-                     "Score": strings['Score'],
+                     "Question": str(strings['Question']),
+                     "Answer": str(strings['Answer']),
+                     "Score": str(strings['Score']),
                      "OperatorFlag": int(strings["OperatorFlag"])
                      }
         message.append(parse_str)
@@ -192,6 +191,7 @@ def QA_bot_module (nn_models, data, redis_connect, config, rabbit_connect, embed
     string_count = data['data']
     tokenizer_QA = nn_models[0]
     model_QA = nn_models[1]
+    dump_id = 0
 
     dataframe = []
     try:
@@ -199,11 +199,11 @@ def QA_bot_module (nn_models, data, redis_connect, config, rabbit_connect, embed
             dump_id = i["id"]
             token_text = scripts.QA.find_similar_answers(i["string"], dataset, tokenizer_QA, model_QA, embeddings, top_n=1)
 
-            result_token = {**token_text}
-        dataframe.append(result_token)
+            #result_token = {**token_text}
+            dataframe.append(token_text)
 
-    except KeyError:
-            log_file('Ошибка в строке сообщения ')
+    except KeyError as err:
+            log_file(f'Ошибка в строке сообщения {err}')
     except TypeError as err:
             log_file(f'Ошибка при отв Проверьте настройки {err}')
           #  continue
@@ -213,6 +213,7 @@ def QA_bot_module (nn_models, data, redis_connect, config, rabbit_connect, embed
         send_mes = send_result(session,
                                parse_answer(dataframe, dump_id, config),
                                rabbit_settings)
+        print(send_mes)
         if send_mes == 0:
             log_file('Сообщение отправил в очередь ')
             break
@@ -281,7 +282,7 @@ def main():
     config = config_init()
 
     log_file('Все переменные окружения прочитаны')
-    dataset = pd.read_excel(config['Embeddings']).dropna()
+    dataset = pd.read_excel(config['Embeddings'])
     nn_models = nn_models_downloads(config)
     embeddings = get_embeddings_from_dataset(dataset, nn_models[0], nn_models[1], 256)
     redis_connect = None

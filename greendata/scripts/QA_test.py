@@ -12,7 +12,7 @@ max_length = 256
 
 def get_embeddings_from_dataset(dataset, tokenizer, model, max_length):
     embeddings = []
-    for q in dataset['Схема ответа']:
+    for q in dataset['Вопрос']:
         # Tokenize input sequence
         encoded_q = tokenizer(q, return_tensors='pt', truncation=True, max_length=max_length)
         encoded_q = {key: value for key, value in encoded_q.items()}
@@ -37,30 +37,40 @@ def find_similar_answers(question, dataset, tokenizer, model, embeddings, top_n=
 
     # Getting indexes of the most similar questions
     top_indices = sorted(range(len(similarities)), key=lambda i: similarities[i], reverse=True)[:top_n]
+    for idx in top_indices:
+        print(idx)
+        answ = dataset['Схема ответа'][idx]
+        web = dataset['Ссылка на wiki'][idx]
+        if (web is None):
+            web = ''
+        score_array = (dataset['Схема ответа'][idx], similarities[idx])
 
     # Returning the most similar answers and their corresponding proximity probabilities
-    similar_answers = [(dataset['Схема ответа'][idx], similarities[idx]) for idx in top_indices]
-    for score in similar_answers[0][1][0].astype(float):
-        score_convert = float(score)
+    for score in score_array:
+        score_convert = score[0]
+        print(score_convert)
+
+
 
     output_bot_answ = {
                             'error': False,
                             "Question": question,
-                            "Answer": similar_answers[0][0],
-                            "Score": score_convert,
+                            "Answer": answ + "\n " + web,
+                            "Score": score_convert[0],
                             "OperatorFlag": 0
                      }
 
+    print(output_bot_answ)
     return output_bot_answ
 
 
-with open(r'/home/user/ner/ner/greendata/greendata/model/tokenizer_and_model.pkl', "rb") as f:
+with open(r'/home/user/ner/Diploma/greendata/model/tokenizer_and_model.pkl', "rb") as f:
     loaded_data = pickle.load(f)
 
 tokenizer_model = loaded_data['tokenizer']
 detect_model = loaded_data['model']
 
-dataset = pd.read_excel(r'/home/user/ner/ner/greendata/greendata/model/faq.xlsx').dropna()
+dataset = pd.read_excel(r'/home/user/ner/Diploma/greendata/model/faq.xlsx')
 embed = get_embeddings_from_dataset(dataset,tokenizer_model,detect_model, 256)
 
-find_similar_answers("Что такое Greendata",dataset,tokenizer_model,detect_model, embed)
+find_similar_answers("Зачем привязываться к юридическому лицу?",dataset,tokenizer_model,detect_model, embed)

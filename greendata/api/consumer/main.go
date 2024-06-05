@@ -37,7 +37,7 @@ func main() {
 			if err = json.Unmarshal([]byte(message), &result); err != nil {
 				log.Println("Unmarshalling error: ", err)
 			}
-			log.Println("Response from analyzer received: ", result.SessionID)
+			log.Println("Response from greendata bot received: ", result.SessionID)
 			if err = db.Model(&models.Result{}).Where("sid = ?", result.SessionID).Updates(result).Error; err != nil {
 				log.Println(err)
 			}

@@ -19,7 +19,7 @@ type Tokens struct {
 	Error      int   `json:"error"`
 	Question   string `json:"Question"`
 	Answer     string `json:"Answer"`
-	Score      float32    `json:"Score"`
+	Score      string    `json:"Score"`
 	Operator    int  `json:"OperatorFlag"`
 }
 
