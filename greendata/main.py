@@ -213,7 +213,6 @@ def QA_bot_module (nn_models, data, redis_connect, config, rabbit_connect, embed
         send_mes = send_result(session,
                                parse_answer(dataframe, dump_id, config),
                                rabbit_settings)
-        print(send_mes)
         if send_mes == 0:
             log_file('Сообщение отправил в очередь ')
             break
